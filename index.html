@@ -3,125 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>STUDY COMMAND CENTER</title>
+    <title>STUDY OS PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { background: #0a0a0c; color: white; font-family: -apple-system, sans-serif; }
+        body { background: #0a0a0c; color: white; font-family: -apple-system, sans-serif; overflow: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
         .neon-blue { color: #00d1ff; text-shadow: 0 0 15px rgba(0,209,255,0.6); }
-        .input-gamer { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px; color: white; outline: none; }
-        .input-gamer:focus { border-color: #00d1ff; }
+        .page { display: none; min-height: 85vh; animation: slideUp 0.3s ease-out; }
+        .active-page { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; font-weight: bold; color: #555; transition: 0.3s; }
+        .nav-btn.active { color: #00d1ff; }
+        .option-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; }
+        .option-btn:active { transform: scale(0.98); background: #00d1ff; color: black; }
+        .correct-flash { animation: flashGreen 0.5s; }
+        @keyframes flashGreen { 0% { background: transparent; } 50% { background: #00ff8844; } 100% { background: transparent; } }
     </style>
 </head>
-<body class="p-6 pt-16 select-none">
+<body class="p-6 pt-12">
 
-    <header class="mb-6">
-        <h1 class="text-2xl font-black italic neon-blue uppercase tracking-tighter">Mission<span class="text-white">Control</span></h1>
-        <p id="current-task-display" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Aguardando definição de objetivo...</p>
+    <header class="mb-6 flex justify-between items-center px-2">
+        <div>
+            <h1 class="text-xl font-black italic neon-blue tracking-tighter" id="page-title">HOME</h1>
+            <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span class="text-[9px] text-gray-500 font-bold uppercase tracking-widest">iPhone 12 On-line</span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <div class="glass px-3 py-1 rounded-full text-xs font-black text-blue-400 border-blue-500/30">
+                Lvl 12
+            </div>
+        </div>
     </header>
 
-    <section id="setup-area" class="glass p-5 rounded-[24px] mb-6 space-y-4">
-        <h2 class="text-[9px] font-black text-gray-500 uppercase tracking-widest">Configurar Missão</h2>
-        
-        <div class="flex flex-col gap-2">
-            <label class="text-[10px] font-bold text-gray-400">MATÉRIA / TEMA</label>
-            <input type="text" id="task-input" placeholder="Ex: Matemática, Redação..." class="input-gamer text-sm">
-        </div>
-
-        <div class="flex flex-col gap-2">
-            <label class="text-[10px] font-bold text-gray-400">TEMPO DA MISSÃO (MINUTOS)</label>
-            <input type="number" id="time-input" placeholder="25" min="1" max="120" class="input-gamer text-sm">
-        </div>
-
-        <button onclick="applySettings()" class="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-black uppercase transition-all">
-            Confirmar Configurações
-        </button>
-    </section>
-
-    <section class="glass p-8 rounded-[40px] text-center mb-8 relative overflow-hidden">
-        <div id="timer-display" class="text-6xl font-mono font-black mb-8 tracking-tighter transition-all">25:00</div>
-        
-        <div class="flex gap-3">
-            <button id="start-btn" onclick="toggleTimer()" class="flex-[2] bg-[#00d1ff] text-black font-black py-4 rounded-2xl active:scale-95 transition-all uppercase text-sm">
-                Iniciar Missão
+    <section id="page-home" class="page active-page px-2">
+        <div class="glass p-10 rounded-[48px] text-center mb-6 border-b-4 border-blue-600 shadow-2xl">
+            <div id="timer-display" class="text-6xl font-mono font-black mb-6 tracking-tighter">25:00</div>
+            <button onclick="toggleTimer()" id="start-btn" class="w-full bg-[#00d1ff] text-black font-extrabold py-4 rounded-2xl uppercase text-xs tracking-widest active:scale-95 transition-all">
+                Iniciar Sessão
             </button>
-            <button onclick="resetTimer()" class="flex-1 bg-white/5 border border-white/10 rounded-2xl active:rotate-180 transition-all duration-500">
-                🔄
-            </button>
+        </div>
+        <div class="glass p-5 rounded-3xl flex items-center justify-between">
+            <div>
+                <p class="text-[10px] text-gray-500 font-bold">MISSÃO ATUAL</p>
+                <p class="font-bold text-sm" id="current-task-name">Foco em Matemática</p>
+            </div>
+            <span class="text-2xl">⚡</span>
         </div>
     </section>
 
-    <nav class="fixed bottom-0 left-0 w-full p-8 flex justify-around bg-black/60 backdrop-blur-xl border-t border-white/5">
-        <span class="text-xl" onclick="location.reload()">🏠</span>
-        <span class="text-xl neon-blue">🔥</span>
-        <span class="text-xl opacity-20">⚙️</span>
+    <section id="page-subjects" class="page px-2">
+        <div class="space-y-3">
+            <button onclick="startQuiz('Matemática')" class="w-full glass p-6 rounded-3xl flex justify-between items-center border-l-4 border-red-500">
+                <div class="text-left">
+                    <p class="font-bold">📐 Matemática</p>
+                    <p class="text-[10px] text-gray-500 uppercase">3 Questões Disponíveis</p>
+                </div>
+                <span class="text-gray-600 text-xl">❯</span>
+            </button>
+            <button onclick="startQuiz('Português')" class="w-full glass p-6 rounded-3xl flex justify-between items-center border-l-4 border-blue-500">
+                <div class="text-left">
+                    <p class="font-bold">📚 Português</p>
+                    <p class="text-[10px] text-gray-500 uppercase">Simulado de Gramática</p>
+                </div>
+                <span class="text-gray-600 text-xl">❯</span>
+            </button>
+        </div>
+    </section>
+
+    <section id="page-goals" class="page px-2">
+        <div class="glass p-6 rounded-3xl mb-4">
+            <h3 class="text-xs font-bold mb-4 text-blue-400 uppercase tracking-widest">Metas Diárias</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Completar 3 Simulados</span>
+                    <span class="text-[10px] text-green-500 font-bold" id="goal-simulados">0/3</span>
+                </div>
+                <div class="w-full h-1 bg-white/5 rounded-full"><div class="h-full bg-blue-500 w-1/3"></div></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="page-settings" class="page px-2">
+        <div class="glass p-6 rounded-3xl space-y-4">
+            <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Configurações de Missão</h3>
+            <input type="text" id="set-task" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-sm" placeholder="Nome da Matéria">
+            <input type="number" id="set-time" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-sm" placeholder="Tempo (min)">
+            <button onclick="applySettings()" class="w-full bg-blue-500 text-black font-black py-4 rounded-xl text-xs uppercase tracking-widest">Salvar Alterações</button>
+        </div>
+    </section>
+
+    <div id="quiz-screen" class="fixed inset-0 bg-[#0a0a0c] z-[100] p-6 pt-16 hidden">
+        <div class="flex justify-between items-center mb-8">
+            <span class="text-[10px] font-black text-blue-400 uppercase tracking-[4px]" id="quiz-subject">SIMULADO</span>
+            <span id="quiz-progress" class="text-xs font-bold text-gray-600">1/3</span>
+        </div>
+        <p id="question-text" class="text-xl font-bold leading-tight mb-8">Pergunta aqui?</p>
+        <div id="options-box" class="space-y-3"></div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 w-full p-5 pb-8 flex justify-around bg-black/95 backdrop-blur-2xl border-t border-white/5 z-50">
+        <button onclick="nav('home', this)" class="nav-btn active"><span>🏠</span>INÍCIO</button>
+        <button onclick="nav('subjects', this)" class="nav-btn"><span>🎯</span>MISSÕES</button>
+        <button onclick="nav('goals', this)" class="nav-btn"><span>🏆</span>METAS</button>
+        <button onclick="nav('settings', this)" class="nav-btn"><span>⚙️</span>AJUSTES</button>
     </nav>
 
     <script>
-        let timeLeft = 25 * 60;
-        let timerId = null;
-        let isRunning = false;
-
-        const display = document.getElementById('timer-display');
-        const startBtn = document.getElementById('start-btn');
-        const taskInput = document.getElementById('task-input');
-        const timeInput = document.getElementById('time-input');
-        const taskDisplay = document.getElementById('current-task-display');
-
-        function applySettings() {
-            const task = taskInput.value || "Estudo Geral";
-            const time = parseInt(timeInput.value) || 25;
-            
-            timeLeft = time * 60;
-            taskDisplay.textContent = `OBJETIVO: ${task.toUpperCase()}`;
-            taskDisplay.style.color = "#00ff88";
-            updateDisplay();
-            
-            // Feedback visual de sucesso
-            alert("Configurações aplicadas!");
+        // NAVEGAÇÃO
+        function nav(pageId, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active-page');
+            document.getElementById('page-title').innerText = pageId.toUpperCase();
+            btn.classList.add('active');
         }
 
-        function updateDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        // QUIZ COM ANIMAÇÃO
+        const questions = {
+            'Matemática': [
+                { q: "Qual o resultado de 9 x 9?", opt: ["72", "81", "90", "82"], a: 1 },
+                { q: "Resolva: 150 / 2 + 25", opt: ["75", "100", "50", "125"], a: 1 }
+            ]
+        };
+
+        let currentStep = 0;
+        let activeSubject = '';
+
+        function startQuiz(subject) {
+            activeSubject = subject;
+            currentStep = 0;
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            showQuestion();
         }
 
-        function toggleTimer() {
-            if (isRunning) {
-                clearInterval(timerId);
-                isRunning = false;
-                startBtn.textContent = "Retomar";
-                startBtn.classList.replace('bg-[#00ff88]', 'bg-[#00d1ff]');
+        function showQuestion() {
+            const data = questions[activeSubject][currentStep];
+            document.getElementById('quiz-subject').innerText = activeSubject;
+            document.getElementById('quiz-progress').innerText = `${currentStep + 1}/${questions[activeSubject].length}`;
+            document.getElementById('question-text').innerText = data.q;
+            
+            const box = document.getElementById('options-box');
+            box.innerHTML = '';
+            data.opt.forEach((t, i) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full option-btn p-5 rounded-2xl text-left font-bold text-sm";
+                btn.innerText = t;
+                btn.onclick = () => checkAnswer(i);
+                box.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(i) {
+            const correct = questions[activeSubject][currentStep].a;
+            if (i === correct) {
+                // ANIMAÇÃO DE CONFETE
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#00d1ff', '#00ff88', '#ffffff']
+                });
+            }
+
+            currentStep++;
+            if (currentStep < questions[activeSubject].length) {
+                showQuestion();
             } else {
-                isRunning = true;
-                startBtn.textContent = "Pausar";
-                startBtn.style.background = "#ff4e00"; // Cor de "alerta" ao rodar
-                startBtn.style.color = "white";
-                
-                timerId = setInterval(() => {
-                    if (timeLeft > 0) {
-                        timeLeft--;
-                        updateDisplay();
-                    } else {
-                        clearInterval(timerId);
-                        isRunning = false;
-                        alert("MISSÃO CONCLUÍDA! FIM DA SESSÃO 🏆");
-                        resetTimer();
-                    }
-                }, 1000);
+                setTimeout(() => {
+                    alert("MISSÃO CUMPRIDA! +50 XP");
+                    document.getElementById('quiz-screen').classList.add('hidden');
+                    document.getElementById('goal-simulados').innerText = "1/3";
+                }, 500);
             }
         }
 
-        function resetTimer() {
-            clearInterval(timerId);
-            isRunning = false;
-            const time = parseInt(timeInput.value) || 25;
-            timeLeft = time * 60;
-            updateDisplay();
-            startBtn.textContent = "Iniciar Missão";
-            startBtn.style.background = "#00d1ff";
-            startBtn.style.color = "black";
+        // CRONÔMETRO
+        let timeLeft = 25 * 60;
+        let timerId = null;
+        function updateDisplay() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            document.getElementById('timer-display').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        function toggleTimer() {
+            if (timerId) { clearInterval(timerId); timerId = null; }
+            else { timerId = setInterval(() => { timeLeft--; updateDisplay(); }, 1000); }
+        }
+        function applySettings() {
+            const t = document.getElementById('set-task').value;
+            const m = document.getElementById('set-time').value;
+            if(t) document.getElementById('current-task-name').innerText = t;
+            if(m) { timeLeft = m * 60; updateDisplay(); }
+            alert("Ajustes Aplicados!");
         }
     </script>
 </body>
