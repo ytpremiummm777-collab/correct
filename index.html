@@ -2,22 +2,16 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>FPS Web Demo</title>
+<title>FPS Mobile</title>
 
 <style>
+
 body{
 margin:0;
 overflow:hidden;
 background:black;
 font-family:Arial;
-}
-
-#hud{
-position:absolute;
-top:10px;
-left:10px;
-color:white;
-font-size:16px;
+touch-action:none;
 }
 
 #crosshair{
@@ -25,28 +19,83 @@ position:absolute;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
-font-size:30px;
 color:white;
+font-size:24px;
 }
 
-#info{
+#hud{
 position:absolute;
-bottom:10px;
+top:10px;
 left:10px;
 color:white;
-font-size:12px;
+font-size:14px;
 }
-</style>
 
+#joystick{
+position:absolute;
+bottom:80px;
+left:40px;
+width:120px;
+height:120px;
+background:rgba(255,255,255,0.1);
+border-radius:50%;
+}
+
+#stick{
+position:absolute;
+width:60px;
+height:60px;
+background:rgba(255,255,255,0.4);
+border-radius:50%;
+left:30px;
+top:30px;
+}
+
+#shoot{
+position:absolute;
+bottom:100px;
+right:40px;
+width:80px;
+height:80px;
+background:red;
+border-radius:50%;
+color:white;
+font-size:20px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+#reload{
+position:absolute;
+bottom:200px;
+right:50px;
+width:60px;
+height:60px;
+background:blue;
+border-radius:50%;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+</style>
 </head>
+
 <body>
 
 <div id="crosshair">+</div>
 <div id="hud">HP:100 | Ammo:30</div>
-<div id="info">WASD mover | Shift correr | Space pular | Ctrl agachar | R recarregar | Clique atirar</div>
+
+<div id="joystick">
+<div id="stick"></div>
+</div>
+
+<div id="shoot">FIRE</div>
+<div id="reload">R</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/PointerLockControls.js"></script>
 
 <script>
 
@@ -59,60 +108,38 @@ window.innerWidth/window.innerHeight,
 1000
 )
 
-let renderer = new THREE.WebGLRenderer({antialias:true})
+let renderer = new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth,window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
-const controls = new THREE.PointerLockControls(camera, document.body)
-
-document.body.addEventListener("click",()=>{
-controls.lock()
-})
-
-scene.add(controls.getObject())
+camera.position.y = 1.6
 
 // luz
-const light = new THREE.HemisphereLight(0xffffff,0x444444)
+let light = new THREE.HemisphereLight(0xffffff,0x444444)
 scene.add(light)
 
 // chão
-const floorGeo = new THREE.PlaneGeometry(200,200)
-const floorMat = new THREE.MeshStandardMaterial({color:0x333333})
-const floor = new THREE.Mesh(floorGeo,floorMat)
+let floor = new THREE.Mesh(
+new THREE.PlaneGeometry(200,200),
+new THREE.MeshStandardMaterial({color:0x333333})
+)
 
 floor.rotation.x = -Math.PI/2
 scene.add(floor)
 
-// paredes simples
-for(let i=0;i<20;i++){
-
-let box = new THREE.Mesh(
-new THREE.BoxGeometry(3,3,3),
-new THREE.MeshStandardMaterial({color:0x555555})
-)
-
-box.position.set(
-(Math.random()-0.5)*100,
-1.5,
-(Math.random()-0.5)*100
-)
-
-scene.add(box)
-
-}
-
-// arma simples
+// arma
 let gun = new THREE.Mesh(
 new THREE.BoxGeometry(0.3,0.2,1),
 new THREE.MeshStandardMaterial({color:0x111111})
 )
 
 gun.position.set(0.5,-0.4,-1)
+
 camera.add(gun)
 scene.add(camera)
 
 // inimigos
-let enemies = []
+let enemies=[]
 
 function spawnEnemy(){
 
@@ -127,40 +154,77 @@ enemy.position.set(
 (Math.random()-0.5)*80
 )
 
-enemy.health = 100
+enemy.hp = 100
 
 scene.add(enemy)
 enemies.push(enemy)
 
 }
 
-for(let i=0;i<6;i++) spawnEnemy()
+for(let i=0;i<5;i++) spawnEnemy()
 
 // estado jogador
 let hp = 100
 let ammo = 30
-let maxAmmo = 30
 
-// teclas
-const keys = {}
+// joystick
+let joyX=0
+let joyY=0
 
-document.addEventListener("keydown",e=>{
-keys[e.code]=true
+let stick = document.getElementById("stick")
+
+document.getElementById("joystick").addEventListener("touchmove",e=>{
+
+let rect = e.target.getBoundingClientRect()
+
+let x = e.touches[0].clientX - rect.left - 60
+let y = e.touches[0].clientY - rect.top - 60
+
+joyX = x/40
+joyY = y/40
+
+stick.style.left = (x+30)+"px"
+stick.style.top = (y+30)+"px"
+
 })
 
-document.addEventListener("keyup",e=>{
-keys[e.code]=false
+document.getElementById("joystick").addEventListener("touchend",()=>{
+
+joyX=0
+joyY=0
+
+stick.style.left="30px"
+stick.style.top="30px"
+
 })
 
-// física
-let velocity = new THREE.Vector3()
-let direction = new THREE.Vector3()
+// mirar com dedo
+let lastX=null
 
-let canJump=false
-let crouching=false
+document.addEventListener("touchmove",e=>{
+
+if(e.touches.length==1){
+
+if(lastX!=null){
+
+let dx = e.touches[0].clientX-lastX
+
+camera.rotation.y -= dx*0.005
+
+}
+
+lastX = e.touches[0].clientX
+
+}
+
+})
+
+document.addEventListener("touchend",()=>{
+lastX=null
+})
 
 // tiro
-document.addEventListener("mousedown",()=>{
+document.getElementById("shoot").addEventListener("touchstart",()=>{
 
 if(ammo<=0) return
 
@@ -179,11 +243,10 @@ if(hits.length>0){
 
 let enemy = hits[0].object
 
-enemy.health -= 50
-
+enemy.hp -= 50
 enemy.material.color.set(0xffff00)
 
-if(enemy.health<=0){
+if(enemy.hp<=0){
 
 scene.remove(enemy)
 enemies.splice(enemies.indexOf(enemy),1)
@@ -196,49 +259,19 @@ spawnEnemy()
 })
 
 // recarregar
-document.addEventListener("keydown",e=>{
-if(e.code==="KeyR"){
-ammo = maxAmmo
-}
+document.getElementById("reload").addEventListener("touchstart",()=>{
+
+ammo=30
+
 })
 
 // movimento
 function updatePlayer(){
 
-direction.z = Number(keys["KeyW"]) - Number(keys["KeyS"])
-direction.x = Number(keys["KeyD"]) - Number(keys["KeyA"])
-direction.normalize()
+let speed=0.2
 
-let speed = keys["ShiftLeft"] ? 0.25 : 0.12
-
-if(keys["ControlLeft"]){
-speed *=0.5
-crouching=true
-camera.position.y = 1
-}else{
-crouching=false
-camera.position.y = 1.6
-}
-
-if(keys["Space"] && canJump){
-velocity.y = 0.2
-canJump=false
-}
-
-velocity.y -= 0.01
-
-controls.moveRight(direction.x * speed)
-controls.moveForward(direction.z * speed)
-
-controls.getObject().position.y += velocity.y
-
-if(controls.getObject().position.y < 1.6){
-
-velocity.y = 0
-controls.getObject().position.y = 1.6
-canJump=true
-
-}
+camera.position.x += joyX*speed
+camera.position.z += joyY*speed
 
 }
 
@@ -249,24 +282,21 @@ enemies.forEach(enemy=>{
 
 let dir = new THREE.Vector3()
 
-dir.subVectors(
-controls.getObject().position,
-enemy.position
-)
+dir.subVectors(camera.position,enemy.position)
 
 let dist = dir.length()
 
 dir.normalize()
 
-if(dist < 30){
+if(dist<30){
 
-enemy.position.add(dir.multiplyScalar(0.05))
+enemy.position.add(dir.multiplyScalar(0.03))
 
 }
 
-if(dist < 2){
+if(dist<2){
 
-hp -= 0.1
+hp -=0.05
 
 }
 
