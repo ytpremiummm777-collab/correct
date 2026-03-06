@@ -2,15 +2,22 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>FPS Shooter</title>
+<title>FPS Web Demo</title>
 
 <style>
-
 body{
 margin:0;
 overflow:hidden;
 background:black;
 font-family:Arial;
+}
+
+#hud{
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+font-size:16px;
 }
 
 #crosshair{
@@ -22,23 +29,24 @@ font-size:30px;
 color:white;
 }
 
-#hud{
+#info{
 position:absolute;
-top:10px;
+bottom:10px;
 left:10px;
 color:white;
-font-size:18px;
+font-size:12px;
 }
-
 </style>
 
 </head>
 <body>
 
 <div id="crosshair">+</div>
-<div id="hud">Munição: 30</div>
+<div id="hud">HP:100 | Ammo:30</div>
+<div id="info">WASD mover | Shift correr | Space pular | Ctrl agachar | R recarregar | Clique atirar</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/PointerLockControls.js"></script>
 
 <script>
 
@@ -55,53 +63,108 @@ let renderer = new THREE.WebGLRenderer({antialias:true})
 renderer.setSize(window.innerWidth,window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
-camera.position.y = 1.6
+const controls = new THREE.PointerLockControls(camera, document.body)
+
+document.body.addEventListener("click",()=>{
+controls.lock()
+})
+
+scene.add(controls.getObject())
 
 // luz
-let light = new THREE.HemisphereLight(0xffffff,0x444444)
+const light = new THREE.HemisphereLight(0xffffff,0x444444)
 scene.add(light)
 
 // chão
-let floorGeo = new THREE.PlaneGeometry(200,200)
-let floorMat = new THREE.MeshStandardMaterial({color:0x333333})
-
-let floor = new THREE.Mesh(floorGeo,floorMat)
+const floorGeo = new THREE.PlaneGeometry(200,200)
+const floorMat = new THREE.MeshStandardMaterial({color:0x333333})
+const floor = new THREE.Mesh(floorGeo,floorMat)
 
 floor.rotation.x = -Math.PI/2
 scene.add(floor)
 
-// inimigo
-let enemyGeo = new THREE.BoxGeometry(1,2,1)
-let enemyMat = new THREE.MeshStandardMaterial({color:0xff0000})
+// paredes simples
+for(let i=0;i<20;i++){
 
-let enemy = new THREE.Mesh(enemyGeo,enemyMat)
+let box = new THREE.Mesh(
+new THREE.BoxGeometry(3,3,3),
+new THREE.MeshStandardMaterial({color:0x555555})
+)
 
-enemy.position.set(0,1,-20)
+box.position.set(
+(Math.random()-0.5)*100,
+1.5,
+(Math.random()-0.5)*100
+)
 
-scene.add(enemy)
+scene.add(box)
 
-// arma
-let gunGeo = new THREE.BoxGeometry(0.3,0.2,1)
-let gunMat = new THREE.MeshStandardMaterial({color:0x222222})
+}
 
-let gun = new THREE.Mesh(gunGeo,gunMat)
+// arma simples
+let gun = new THREE.Mesh(
+new THREE.BoxGeometry(0.3,0.2,1),
+new THREE.MeshStandardMaterial({color:0x111111})
+)
 
 gun.position.set(0.5,-0.4,-1)
-
 camera.add(gun)
 scene.add(camera)
 
-// munição
+// inimigos
+let enemies = []
+
+function spawnEnemy(){
+
+let enemy = new THREE.Mesh(
+new THREE.BoxGeometry(1,2,1),
+new THREE.MeshStandardMaterial({color:0xff0000})
+)
+
+enemy.position.set(
+(Math.random()-0.5)*80,
+1,
+(Math.random()-0.5)*80
+)
+
+enemy.health = 100
+
+scene.add(enemy)
+enemies.push(enemy)
+
+}
+
+for(let i=0;i<6;i++) spawnEnemy()
+
+// estado jogador
+let hp = 100
 let ammo = 30
+let maxAmmo = 30
+
+// teclas
+const keys = {}
+
+document.addEventListener("keydown",e=>{
+keys[e.code]=true
+})
+
+document.addEventListener("keyup",e=>{
+keys[e.code]=false
+})
+
+// física
+let velocity = new THREE.Vector3()
+let direction = new THREE.Vector3()
+
+let canJump=false
+let crouching=false
 
 // tiro
-window.addEventListener("click",()=>{
+document.addEventListener("mousedown",()=>{
 
-if(ammo <=0) return
+if(ammo<=0) return
 
 ammo--
-
-document.getElementById("hud").innerHTML = "Munição: " + ammo
 
 let raycaster = new THREE.Raycaster()
 
@@ -110,50 +173,113 @@ new THREE.Vector2(0,0),
 camera
 )
 
-let hit = raycaster.intersectObject(enemy)
+let hits = raycaster.intersectObjects(enemies)
 
-if(hit.length > 0){
+if(hits.length>0){
 
-enemy.material.color.set(0x00ff00)
+let enemy = hits[0].object
+
+enemy.health -= 50
+
+enemy.material.color.set(0xffff00)
+
+if(enemy.health<=0){
+
+scene.remove(enemy)
+enemies.splice(enemies.indexOf(enemy),1)
+spawnEnemy()
 
 }
 
+}
+
+})
+
+// recarregar
+document.addEventListener("keydown",e=>{
+if(e.code==="KeyR"){
+ammo = maxAmmo
+}
 })
 
 // movimento
-let keys = {}
+function updatePlayer(){
 
-document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()] = true
-})
+direction.z = Number(keys["KeyW"]) - Number(keys["KeyS"])
+direction.x = Number(keys["KeyD"]) - Number(keys["KeyA"])
+direction.normalize()
 
-document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()] = false
-})
+let speed = keys["ShiftLeft"] ? 0.25 : 0.12
 
-function move(){
+if(keys["ControlLeft"]){
+speed *=0.5
+crouching=true
+camera.position.y = 1
+}else{
+crouching=false
+camera.position.y = 1.6
+}
 
-if(keys["w"]) camera.position.z -= 0.2
-if(keys["s"]) camera.position.z += 0.2
-if(keys["a"]) camera.position.x -= 0.2
-if(keys["d"]) camera.position.x += 0.2
+if(keys["Space"] && canJump){
+velocity.y = 0.2
+canJump=false
+}
+
+velocity.y -= 0.01
+
+controls.moveRight(direction.x * speed)
+controls.moveForward(direction.z * speed)
+
+controls.getObject().position.y += velocity.y
+
+if(controls.getObject().position.y < 1.6){
+
+velocity.y = 0
+controls.getObject().position.y = 1.6
+canJump=true
 
 }
 
-// mouse FPS
-document.body.addEventListener("mousemove",(e)=>{
+}
 
-if(document.pointerLockElement === document.body){
+// IA inimigos
+function updateEnemies(){
 
-camera.rotation.y -= e.movementX * 0.002
-camera.rotation.x -= e.movementY * 0.002
+enemies.forEach(enemy=>{
+
+let dir = new THREE.Vector3()
+
+dir.subVectors(
+controls.getObject().position,
+enemy.position
+)
+
+let dist = dir.length()
+
+dir.normalize()
+
+if(dist < 30){
+
+enemy.position.add(dir.multiplyScalar(0.05))
+
+}
+
+if(dist < 2){
+
+hp -= 0.1
 
 }
 
 })
 
-document.body.onclick = ()=>{
-document.body.requestPointerLock()
+}
+
+// HUD
+function updateHUD(){
+
+document.getElementById("hud").innerHTML =
+"HP:"+Math.floor(hp)+" | Ammo:"+ammo
+
 }
 
 // loop
@@ -161,7 +287,9 @@ function animate(){
 
 requestAnimationFrame(animate)
 
-move()
+updatePlayer()
+updateEnemies()
+updateHUD()
 
 renderer.render(scene,camera)
 
