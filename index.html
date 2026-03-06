@@ -3,193 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>P★ APROVAÇÃO ELITE</title>
-    <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/FF0000/p.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
+    <title>STUDY COMMAND CENTER</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     <style>
-        :root { --blue: #0a84ff; --xp: #32d74b; --red: #ff3b30; --bg: #000000; }
-        body { background: var(--bg); color: white; font-family: -apple-system, system-ui, sans-serif; margin: 0; overflow-x: hidden; }
-        .glass { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-        .xp-fill { height: 100%; background: var(--xp); transition: width 0.5s ease; }
-        input, textarea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; outline: none; }
+        body { background: #0a0a0c; color: white; font-family: -apple-system, sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        .neon-blue { color: #00d1ff; text-shadow: 0 0 15px rgba(0,209,255,0.6); }
+        .input-gamer { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px; color: white; outline: none; }
+        .input-gamer:focus { border-color: #00d1ff; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="p-6 pt-16 select-none">
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        const { motion, AnimatePresence } = FramerMotion;
+    <header class="mb-6">
+        <h1 class="text-2xl font-black italic neon-blue uppercase tracking-tighter">Mission<span class="text-white">Control</span></h1>
+        <p id="current-task-display" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Aguardando definição de objetivo...</p>
+    </header>
 
-        const SUBJECTS = [
-            { id: '1', name: 'Português', icon: 'BookOpen', topics: 12 },
-            { id: '2', name: 'Direito Adm.', icon: 'Gavel', topics: 8 },
-            { id: '3', name: 'Direito Penal', icon: 'ShieldAlert', topics: 15 },
-            { id: '4', name: 'Informática', icon: 'Cpu', topics: 6 }
-        ];
+    <section id="setup-area" class="glass p-5 rounded-[24px] mb-6 space-y-4">
+        <h2 class="text-[9px] font-black text-gray-500 uppercase tracking-widest">Configurar Missão</h2>
+        
+        <div class="flex flex-col gap-2">
+            <label class="text-[10px] font-bold text-gray-400">MATÉRIA / TEMA</label>
+            <input type="text" id="task-input" placeholder="Ex: Matemática, Redação..." class="input-gamer text-sm">
+        </div>
 
-        const Icon = ({ name, className }) => {
-            const LucideIcon = lucide[name] || lucide.HelpCircle;
-            return <LucideIcon className={className} size={20} />;
-        };
+        <div class="flex flex-col gap-2">
+            <label class="text-[10px] font-bold text-gray-400">TEMPO DA MISSÃO (MINUTOS)</label>
+            <input type="number" id="time-input" placeholder="25" min="1" max="120" class="input-gamer text-sm">
+        </div>
 
-        function App() {
-            const [view, setView] = useState('radar');
-            const [user, setUser] = useState(() => localStorage.getItem('fp_user') || '');
-            const [examDate, setExamDate] = useState(() => localStorage.getItem('fp_date') || '');
-            const [notes, setNotes] = useState(() => localStorage.getItem('fp_notes') || '');
-            const [stats] = useState(() => JSON.parse(localStorage.getItem('fp_stats')) || { hits: 0, xp: 450 });
-            const [countdown, setCountdown] = useState({ d: '00', h: '00', m: '00' });
+        <button onclick="applySettings()" class="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-black uppercase transition-all">
+            Confirmar Configurações
+        </button>
+    </section>
 
-            useEffect(() => {
-                if (!examDate) return;
-                const timer = setInterval(() => {
-                    const diff = new Date(examDate) - new Date();
-                    if (diff <= 0) return clearInterval(timer);
-                    setCountdown({
-                        d: Math.floor(diff / 864e5).toString().padStart(2, '0'),
-                        h: Math.floor((diff % 864e5) / 36e5).toString().padStart(2, '0'),
-                        m: Math.floor((diff % 36e5) / 6e4).toString().padStart(2, '0')
-                    });
-                }, 1000);
-                return () => clearInterval(timer);
-            }, [examDate]);
+    <section class="glass p-8 rounded-[40px] text-center mb-8 relative overflow-hidden">
+        <div id="timer-display" class="text-6xl font-mono font-black mb-8 tracking-tighter transition-all">25:00</div>
+        
+        <div class="flex gap-3">
+            <button id="start-btn" onclick="toggleTimer()" class="flex-[2] bg-[#00d1ff] text-black font-black py-4 rounded-2xl active:scale-95 transition-all uppercase text-sm">
+                Iniciar Missão
+            </button>
+            <button onclick="resetTimer()" class="flex-1 bg-white/5 border border-white/10 rounded-2xl active:rotate-180 transition-all duration-500">
+                🔄
+            </button>
+        </div>
+    </section>
 
-            if (!user) {
-                return (
-                    <div className="h-screen flex items-center justify-center p-8 text-center">
-                        <div className="w-full max-w-sm">
-                            <div className="relative inline-block mb-6">
-                                <span className="absolute -top-4 -right-2 text-white text-2xl">★</span>
-                                <h1 className="text-8xl font-black text-[#ff3b30]">P</h1>
-                            </div>
-                            <input 
-                                type="text" 
-                                placeholder="Nome de Guerra..." 
-                                className="w-full p-5 rounded-2xl mb-4 text-center font-bold text-xl"
-                                onKeyDown={e => e.key === 'Enter' && e.target.value && (setUser(e.target.value), localStorage.setItem('fp_user', e.target.value))}
-                            />
-                            <p className="text-gray-500 text-[10px] uppercase tracking-widest">Pressione Enter para Iniciar</p>
-                        </div>
-                    </div>
-                );
-            }
+    <nav class="fixed bottom-0 left-0 w-full p-8 flex justify-around bg-black/60 backdrop-blur-xl border-t border-white/5">
+        <span class="text-xl" onclick="location.reload()">🏠</span>
+        <span class="text-xl neon-blue">🔥</span>
+        <span class="text-xl opacity-20">⚙️</span>
+    </nav>
 
-            return (
-                <div className="min-h-screen pb-32">
-                    {/* HEADER */}
-                    <header className="p-8 pt-12 flex justify-between items-end">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <span className="absolute -top-2 -right-1 text-white text-[10px]">★</span>
-                                <h2 className="text-3xl font-black text-[#ff3b30]">P</h2>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Operador</p>
-                                <p className="font-bold italic">{user}</p>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] font-bold text-gray-500 uppercase">XP NÍVEL {Math.floor(stats.xp / 100)}</p>
-                            <div className="w-24 h-1.5 bg-white/10 rounded-full mt-1 overflow-hidden">
-                                <div className="xp-fill" style={{ width: `${stats.xp % 100}%` }}></div>
-                            </div>
-                        </div>
-                    </header>
+    <script>
+        let timeLeft = 25 * 60;
+        let timerId = null;
+        let isRunning = false;
 
-                    <main className="px-6 max-w-md mx-auto">
-                        <AnimatePresence mode="wait">
-                            {view === 'radar' && (
-                                <motion.div key="radar" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                                    <div className="glass rounded-[30px] p-8 text-center">
-                                        <div className="flex justify-around">
-                                            <div><b className="text-3xl block">{countdown.d}</b><span className="text-[9px] text-gray-500 uppercase font-black">Dias</span></div>
-                                            <div><b className="text-3xl block text-[#0a84ff]">{countdown.h}</b><span className="text-[9px] text-gray-500 uppercase font-black">Horas</span></div>
-                                            <div><b className="text-3xl block">{countdown.m}</b><span className="text-[9px] text-gray-500 uppercase font-black">Minutos</span></div>
-                                        </div>
-                                        <p className="text-[9px] text-red-500 font-bold mt-6 tracking-widest uppercase">● Tempo Restante para o Alvo</p>
-                                    </div>
+        const display = document.getElementById('timer-display');
+        const startBtn = document.getElementById('start-btn');
+        const taskInput = document.getElementById('task-input');
+        const timeInput = document.getElementById('time-input');
+        const taskDisplay = document.getElementById('current-task-display');
 
-                                    <div className="glass rounded-[25px] p-6">
-                                        <p className="text-[10px] font-black text-gray-500 uppercase mb-3">Anotações de Campo</p>
-                                        <textarea 
-                                            value={notes} 
-                                            onChange={e => { setNotes(e.target.value); localStorage.setItem('fp_notes', e.target.value); }}
-                                            className="w-full p-2 text-sm h-24"
-                                            placeholder="Sua estratégia aqui..."
-                                        />
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {view === 'questions' && (
-                                <motion.div key="q" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                                    {SUBJECTS.map(s => (
-                                        <div key={s.id} className="glass p-5 rounded-2xl flex justify-between items-center">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
-                                                    <Icon name={s.icon} className="text-[#0a84ff]" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold">{s.name}</p>
-                                                    <p className="text-[9px] text-gray-500 uppercase">{s.topics} Tópicos</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-xl">❯</span>
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
-
-                            {view === 'profile' && (
-                                <motion.div key="p" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                                    <div className="glass p-6 rounded-3xl">
-                                        <label className="text-[10px] font-black text-gray-500 uppercase block mb-2">Data do Concurso</label>
-                                        <input 
-                                            type="datetime-local" 
-                                            value={examDate} 
-                                            onChange={e => { setExamDate(e.target.value); localStorage.setItem('fp_date', e.target.value); }}
-                                            className="w-full p-4 rounded-xl font-bold"
-                                        />
-                                        <button 
-                                            onClick={() => { localStorage.clear(); location.reload(); }}
-                                            className="w-full mt-6 p-4 bg-red-500/10 text-red-500 rounded-xl font-bold text-xs uppercase"
-                                        >Apagar Memória do Sistema</button>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </main>
-
-                    {/* NAVEGAÇÃO CORRIGIDA */}
-                    <nav className="fixed bottom-0 left-0 w-full p-8 pb-10 flex justify-around bg-black/80 backdrop-blur-xl border-t border-white/5">
-                        <button onClick={() => setView('radar')} className={`flex flex-col items-center ${view === 'radar' ? 'text-[#ff3b30]' : 'text-gray-500'}`}>
-                            <Icon name="Target" className="mb-1" />
-                            <span className="text-[9px] font-black">RADAR</span>
-                        </button>
-                        <button onClick={() => setView('questions')} className={`flex flex-col items-center ${view === 'questions' ? 'text-[#ff3b30]' : 'text-gray-500'}`}>
-                            <Icon name="BookOpen" className="mb-1" />
-                            <span className="text-[9px] font-black">ESTUDOS</span>
-                        </button>
-                        <button onClick={() => setView('profile')} className={`flex flex-col items-center ${view === 'profile' ? 'text-[#ff3b30]' : 'text-gray-500'}`}>
-                            <Icon name="Settings" className="mb-1" />
-                            <span className="text-[9px] font-black">PERFIL</span>
-                        </button>
-                    </nav>
-                </div>
-            );
+        function applySettings() {
+            const task = taskInput.value || "Estudo Geral";
+            const time = parseInt(timeInput.value) || 25;
+            
+            timeLeft = time * 60;
+            taskDisplay.textContent = `OBJETIVO: ${task.toUpperCase()}`;
+            taskDisplay.style.color = "#00ff88";
+            updateDisplay();
+            
+            // Feedback visual de sucesso
+            alert("Configurações aplicadas!");
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(timerId);
+                isRunning = false;
+                startBtn.textContent = "Retomar";
+                startBtn.classList.replace('bg-[#00ff88]', 'bg-[#00d1ff]');
+            } else {
+                isRunning = true;
+                startBtn.textContent = "Pausar";
+                startBtn.style.background = "#ff4e00"; // Cor de "alerta" ao rodar
+                startBtn.style.color = "white";
+                
+                timerId = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        clearInterval(timerId);
+                        isRunning = false;
+                        alert("MISSÃO CONCLUÍDA! FIM DA SESSÃO 🏆");
+                        resetTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            isRunning = false;
+            const time = parseInt(timeInput.value) || 25;
+            timeLeft = time * 60;
+            updateDisplay();
+            startBtn.textContent = "Iniciar Missão";
+            startBtn.style.background = "#00d1ff";
+            startBtn.style.color = "black";
+        }
     </script>
 </body>
 </html>
