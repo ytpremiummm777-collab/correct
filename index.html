@@ -1,221 +1,175 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FOCUS PRIME</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        :root { --primary: #00d1ff; --error: #ff4e4e; --success: #00ff88; }
-        body { background: #050507; color: white; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
-        .neon-text { color: var(--primary); text-shadow: 0 0 12px rgba(0,209,255,0.4); }
-        .page { display: none; height: 85vh; animation: pageIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .active-page { display: block; }
-        @keyframes pageIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .shake { animation: shake 0.4s; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-        .nav-icon { transition: 0.3s; filter: grayscale(1); opacity: 0.5; }
-        .active .nav-icon { filter: grayscale(0); opacity: 1; transform: translateY(-5px); }
-        .btn-grad { background: linear-gradient(135deg, #00d1ff 0%, #0077ff 100%); transition: 0.2s; }
-        .btn-grad:active { transform: scale(0.96); }
-    </style>
+<meta charset="UTF-8">
+<title>FPS Shooter</title>
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+background:black;
+font-family:Arial;
+}
+
+#crosshair{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:30px;
+color:white;
+}
+
+#hud{
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+font-size:18px;
+}
+
+</style>
+
 </head>
-<body class="p-6 pt-12">
+<body>
 
-    <header class="flex justify-between items-center mb-8 px-2">
-        <div>
-            <h1 class="text-2xl font-black italic neon-text tracking-tighter uppercase">Focus<span class="text-white">Prime</span></h1>
-            <p class="text-[9px] font-bold text-gray-500 tracking-[3px]">SISTEMA DE ALTA PERFORMANCE</p>
-        </div>
-        <div class="relative">
-            <div class="w-12 h-12 rounded-2xl glass flex items-center justify-center border-blue-500/20">
-                <span id="global-rank" class="text-sm font-bold text-blue-400">01</span>
-            </div>
-        </div>
-    </header>
+<div id="crosshair">+</div>
+<div id="hud">Munição: 30</div>
 
-    <section id="page-home" class="page active-page">
-        <div class="glass p-8 rounded-[40px] mb-6 relative overflow-hidden text-center border-b-2 border-blue-500/50">
-            <p class="text-[10px] text-blue-400 font-black mb-2 uppercase tracking-widest">Sessão Ativa</p>
-            <div id="timer-display" class="text-7xl font-mono font-black mb-6 tracking-tighter">25:00</div>
-            <button onclick="toggleTimer()" id="start-btn" class="w-full btn-grad text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest">Iniciar Protocolo</button>
-        </div>
-        
-        <div class="glass p-5 rounded-3xl flex items-center gap-4 mb-4">
-            <div class="h-12 w-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-2xl">🔥</div>
-            <div class="flex-1">
-                <div class="flex justify-between text-[10px] font-bold mb-1"><span>META DIÁRIA</span><span id="meta-perc">30%</span></div>
-                <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden"><div id="meta-bar" class="h-full bg-blue-500 transition-all duration-700" style="width: 30%"></div></div>
-            </div>
-        </div>
-    </section>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 
-    <section id="page-missions" class="page">
-        <div class="space-y-4">
-            <h2 class="text-xs font-black text-gray-500 uppercase tracking-widest ml-2">Escolha seu Mentor</h2>
-            <div onclick="startQuiz('Ciências')" class="glass p-5 rounded-3xl flex items-center gap-4 border-l-4 border-green-500 active:scale-95 transition-all">
-                <div class="text-3xl">👨‍🔬</div>
-                <div><p class="font-bold">Prof. Isaac</p><p class="text-[10px] text-gray-400 uppercase tracking-tighter">Missão: Biologia & Cosmos</p></div>
-            </div>
-            <div onclick="startQuiz('Matemática')" class="glass p-5 rounded-3xl flex items-center gap-4 border-l-4 border-red-500 active:scale-95 transition-all">
-                <div class="text-3xl">📐</div>
-                <div><p class="font-bold">Mestre Pitágoras</p><p class="text-[10px] text-gray-400 uppercase tracking-tighter">Missão: Lógica Pura</p></div>
-            </div>
-        </div>
-    </section>
+<script>
 
-    <section id="page-rank" class="page">
-        <div class="glass p-6 rounded-3xl text-center">
-            <div class="w-20 h-20 mx-auto bg-gradient-to-tr from-blue-600 to-emerald-400 rounded-full mb-4 flex items-center justify-center text-3xl shadow-lg shadow-blue-500/20">🏆</div>
-            <h2 class="font-black text-xl mb-1">ESTUDANTE ELITE</h2>
-            <p class="text-xs text-gray-500 mb-6 uppercase tracking-widest">Nível de Foco: Máximo</p>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="glass p-4 rounded-2xl"><p class="text-[9px] text-gray-500">QUESTÕES</p><b id="total-q">0</b></div>
-                <div class="glass p-4 rounded-2xl"><p class="text-[9px] text-gray-500">ACERTOS</p><b id="total-a" class="text-blue-400">0</b></div>
-            </div>
-        </div>
-    </section>
+let scene = new THREE.Scene()
 
-    <div id="quiz-screen" class="fixed inset-0 bg-[#050507] z-[100] p-6 pt-16 hidden">
-        <div class="flex justify-between items-center mb-8">
-            <button onclick="closeQuiz()" class="text-gray-500 text-xs font-bold uppercase tracking-widest">❮ Sair</button>
-            <span id="quiz-progress" class="text-[10px] font-black text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full uppercase tracking-widest">01/03</span>
-        </div>
-        <div id="mentor-box" class="flex items-center gap-4 mb-8 glass p-4 rounded-2xl border-white/5">
-            <div id="mentor-emoji" class="text-4xl">👨‍🔬</div>
-            <p id="mentor-msg" class="text-[11px] leading-tight text-blue-200">"Foque no que é essencial, o conhecimento é a única arma contra o caos."</p>
-        </div>
-        <p id="question-text" class="text-xl font-bold leading-tight mb-10 italic">Questão aqui?</p>
-        <div id="options-box" class="space-y-4"></div>
-    </div>
+let camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+)
 
-    <nav class="fixed bottom-0 left-0 w-full p-6 pb-10 flex justify-around bg-black/80 backdrop-blur-3xl border-t border-white/5 z-50">
-        <button onclick="nav('home', this)" class="nav-btn active flex flex-col items-center gap-1">
-            <span class="nav-icon text-2xl">🏠</span>
-            <span class="text-[8px] font-black uppercase tracking-tighter">Painel</span>
-        </button>
-        <button onclick="nav('missions', this)" class="nav-btn flex flex-col items-center gap-1">
-            <span class="nav-icon text-2xl">🎯</span>
-            <span class="text-[8px] font-black uppercase tracking-tighter">Missões</span>
-        </button>
-        <button onclick="nav('rank', this)" class="nav-btn flex flex-col items-center gap-1">
-            <span class="nav-icon text-2xl">🏆</span>
-            <span class="text-[8px] font-black uppercase tracking-tighter">Perfil</span>
-        </button>
-    </nav>
+let renderer = new THREE.WebGLRenderer({antialias:true})
+renderer.setSize(window.innerWidth,window.innerHeight)
+document.body.appendChild(renderer.domElement)
 
-    <script>
-        // BANCO DE DADOS E PERSONAGENS
-        const data = {
-            'Ciências': {
-                mentor: '👨‍🔬',
-                msg: 'Prof. Isaac diz: "Toda ação tem uma reação. Estudar agora gera sucesso depois!"',
-                questions: [
-                    { q: "Qual destes é o componente mestre da célula?", opt: ["Núcleo", "Ribossomo", "Membrana", "Lisossomo"], a: 0 },
-                    { q: "A luz viaja no vácuo?", opt: ["Sim", "Não", "Apenas no Sol", "Não existe vácuo"], a: 0 }
-                ]
-            },
-            'Matemática': {
-                mentor: '📐',
-                msg: 'Pitágoras diz: "O universo é escrito em números. Vamos resolver este enigma!"',
-                questions: [
-                    { q: "Qual o valor de Pi (aproximado)?", opt: ["3.12", "3.16", "3.14", "3.18"], a: 2 }
-                ]
-            }
-        };
+camera.position.y = 1.6
 
-        let currentQ = 0;
-        let activeSubj = '';
-        let stats = { questions: 0, hits: 0 };
+// luz
+let light = new THREE.HemisphereLight(0xffffff,0x444444)
+scene.add(light)
 
-        function nav(page, btn) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('page-' + page).classList.add('active-page');
-            btn.classList.add('active');
-        }
+// chão
+let floorGeo = new THREE.PlaneGeometry(200,200)
+let floorMat = new THREE.MeshStandardMaterial({color:0x333333})
 
-        function startQuiz(subj) {
-            activeSubj = subj;
-            currentQ = 0;
-            document.getElementById('quiz-screen').classList.remove('hidden');
-            renderQuestion();
-        }
+let floor = new THREE.Mesh(floorGeo,floorMat)
 
-        function renderQuestion() {
-            const quiz = data[activeSubj];
-            const q = quiz.questions[currentQ];
-            document.getElementById('mentor-emoji').innerText = quiz.mentor;
-            document.getElementById('mentor-msg').innerText = quiz.msg;
-            document.getElementById('question-text').innerText = q.q;
-            document.getElementById('quiz-progress').innerText = `${currentQ + 1}/${quiz.questions.length}`;
+floor.rotation.x = -Math.PI/2
+scene.add(floor)
 
-            const box = document.getElementById('options-box');
-            box.innerHTML = '';
-            q.opt.forEach((t, i) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full glass p-5 rounded-2xl text-left font-bold text-sm border-white/5 active:scale-95 transition-all";
-                btn.innerText = t;
-                btn.onclick = () => check(i);
-                box.appendChild(btn);
-            });
-        }
+// inimigo
+let enemyGeo = new THREE.BoxGeometry(1,2,1)
+let enemyMat = new THREE.MeshStandardMaterial({color:0xff0000})
 
-        function check(i) {
-            const correct = data[activeSubj].questions[currentQ].a;
-            const screen = document.getElementById('quiz-screen');
-            stats.questions++;
+let enemy = new THREE.Mesh(enemyGeo,enemyMat)
 
-            if (i === correct) {
-                stats.hits++;
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#00d1ff', '#00ff88'] });
-            } else {
-                screen.classList.add('shake');
-                document.body.style.background = "#220000";
-                setTimeout(() => {
-                    screen.classList.remove('shake');
-                    document.body.style.background = "#050507";
-                }, 400);
-            }
+enemy.position.set(0,1,-20)
 
-            currentQ++;
-            if (currentQ < data[activeSubj].questions.length) {
-                setTimeout(renderQuestion, 600);
-            } else {
-                setTimeout(() => {
-                    alert(`MISSÃO CONCLUÍDA!\nAcertos: ${stats.hits}`);
-                    closeQuiz();
-                    updateStats();
-                }, 800);
-            }
-        }
+scene.add(enemy)
 
-        function updateStats() {
-            document.getElementById('total-q').innerText = stats.questions;
-            document.getElementById('total-a').innerText = stats.hits;
-            const perc = Math.min((stats.hits / 5) * 100, 100);
-            document.getElementById('meta-bar').style.width = perc + '%';
-            document.getElementById('meta-perc').innerText = Math.round(perc) + '%';
-        }
+// arma
+let gunGeo = new THREE.BoxGeometry(0.3,0.2,1)
+let gunMat = new THREE.MeshStandardMaterial({color:0x222222})
 
-        function closeQuiz() { document.getElementById('quiz-screen').classList.add('hidden'); }
+let gun = new THREE.Mesh(gunGeo,gunMat)
 
-        // TIMER LOGIC
-        let timeLeft = 25 * 60, timer = null;
-        function toggleTimer() {
-            if (timer) { clearInterval(timer); timer = null; }
-            else { 
-                timer = setInterval(() => { 
-                    if(timeLeft > 0) { timeLeft--; updateT(); }
-                }, 1000); 
-            }
-        }
-        function updateT() {
-            const m = Math.floor(timeLeft/60), s = timeLeft%60;
-            document.getElementById('timer-display').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        }
-    </script>
+gun.position.set(0.5,-0.4,-1)
+
+camera.add(gun)
+scene.add(camera)
+
+// munição
+let ammo = 30
+
+// tiro
+window.addEventListener("click",()=>{
+
+if(ammo <=0) return
+
+ammo--
+
+document.getElementById("hud").innerHTML = "Munição: " + ammo
+
+let raycaster = new THREE.Raycaster()
+
+raycaster.setFromCamera(
+new THREE.Vector2(0,0),
+camera
+)
+
+let hit = raycaster.intersectObject(enemy)
+
+if(hit.length > 0){
+
+enemy.material.color.set(0x00ff00)
+
+}
+
+})
+
+// movimento
+let keys = {}
+
+document.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()] = true
+})
+
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()] = false
+})
+
+function move(){
+
+if(keys["w"]) camera.position.z -= 0.2
+if(keys["s"]) camera.position.z += 0.2
+if(keys["a"]) camera.position.x -= 0.2
+if(keys["d"]) camera.position.x += 0.2
+
+}
+
+// mouse FPS
+document.body.addEventListener("mousemove",(e)=>{
+
+if(document.pointerLockElement === document.body){
+
+camera.rotation.y -= e.movementX * 0.002
+camera.rotation.x -= e.movementY * 0.002
+
+}
+
+})
+
+document.body.onclick = ()=>{
+document.body.requestPointerLock()
+}
+
+// loop
+function animate(){
+
+requestAnimationFrame(animate)
+
+move()
+
+renderer.render(scene,camera)
+
+}
+
+animate()
+
+</script>
+
 </body>
 </html>
